@@ -239,10 +239,19 @@ num_steps = 15
 forecast = predict(model, num_steps)
 forecast = forecast.reshape(-1,1)
 forecast = scaler.inverse_transform(forecast)
-forecast_dates = predict_dates(num_steps)
+prev_values = scaler.inverse_transform(AMDmid)
+forecast = np.append(prev_values[:-look_back], forecast)
 
+forecast_dates = predict_dates(num_steps)
+forecast_dates = np.append(forecast_dates, AMDdate[:-num_steps])
+
+prev_plot_data = np.array((prev_values[:-look_back]))
 plot_data = np.array((forecast))
 
-plt.plot(plot_data)
 
+plt.plot(plot_data, label="Predicted")
+plt.plot(prev_plot_data, label="Dataset")
+
+
+plt.legend(loc="best")
 plt.show()
