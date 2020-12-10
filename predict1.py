@@ -15,8 +15,10 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import load_model
 from tensorflow import keras
+from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
 #import plotly.plotly as py
 #import plotly.offline as pyoff
 #import plotly.graph_objs as go
@@ -81,6 +83,8 @@ def create_dataset(dataset, time_step=1):
 	
 
 time_step = 12
+look_back = 15
+
 X_train, y_train = create_dataset(train_data, time_step)
 X_test, ytest = create_dataset(test_data, time_step)
 #train_data = create_dataset()
@@ -98,8 +102,15 @@ print(X_train)
 print(y_train)
 print("lm,aoooooooooooooooooooooooooooo")
 
-model = load_model('model.h5')
-#model=Sequential()
+train_generator = TimeseriesGenerator(AMDmid, AMDmid, length=look_back, batch_size=10)
+
+#model = load_model('model.h5')
+model=Sequential()
+model.add(LSTM(10, activation="relu", input_shape=(look_back,1)))
+model.add(Dense(1))
+num_epochs = 30
+model.compile(optimizer="adam", loss="mse")
+model.fit(train_generator, epochs=num_epochs, verbose=1)
 ##model.add(LSTM(100,return_sequences=True,input_shape=(100,1)))
 #model.add(LSTM(128,return_sequences=True,activation='relu',input_shape=(128,1)))
 #model.add(LSTM(128,return_sequences=True))
@@ -120,7 +131,7 @@ model.summary()
 
 
 ### Lets Do the prediction and check performance metrics
-train_predict=model.predict(X_train)
+#train_predict=model.predict(X_train)
 #future = []
 #currentStep = train_predict[:,-1:,:] #last step from the previous prediction
 #future_pred_count = 1440
@@ -130,73 +141,39 @@ train_predict=model.predict(X_train)
 #
 ##after processing a sequence, reset the states for safety
 #model.reset_states()
-test_predict=model.predict(X_test)
+#test_predict=model.predict(X_test)
 #for i in range(len(ytest)):
 #    print(str(i)+ ": x " + str(X_test[i])+" y "+str(ytest[i])+"\n")
     #y is equal to the 12th index of the next set of xtest
 #fpredict = model.predict(train_data)
-print("test_data")
-print(len(test_data))
-print("testpredict")
-print(len(test_predict))
-print("testpredict index")
-print(scaler.inverse_transform(test_predict))
-print("X_test")
-print(len(X_test))
-print("ytest")
-print(len(ytest))
 ##Transformback to original form
-train_predict=scaler.inverse_transform(train_predict)
-test_predict=scaler.inverse_transform(test_predict)
-#AMDmid1=scaler.inverse_transform(AMDmid)
-print(len(test_predict))
-print(len(AMDmid1))
-#fpredict=scaler.inverse_transform(fpredict)
-#print(fpredict)
-print("hello")
-mad = []
-mad = AMDmid[len(train_predict):len(AMDmid)]
 
 #for i in range(len(ytest)):
 #    print(str(i)+ ": x " + str(test_predict[i])+" actual: "+str(mad[i])+"\n")
 
 
-
-print(train_predict)
-print("this guy right here")
-print(test_predict)
-print("this guy right her5675675675e")
-print(len(test_predict))
-
-print(len(mad))
 ### Calculate RMSE performance metrics
 import math
 from sklearn.metrics import mean_squared_error
-math.sqrt(mean_squared_error(y_train,train_predict))
 
-### Test Data RMSE
-math.sqrt(mean_squared_error(ytest,test_predict))
-
-
-look_back=12
-trainPredictPlot = numpy.empty_like(AMDmid)
-trainPredictPlot[:, :] = np.nan
-trainPredictPlot[look_back:len(train_predict)+look_back, :] = train_predict
-# shift test predictions for plotting
-testPredictPlot = numpy.empty_like(AMDmid)
-testPredictPlot[:, :] = numpy.nan
-testPredictPlot[(len(train_predict))+(look_back*2)+1:len(AMDmid)-1, :] = test_predict
+# trainPredictPlot = numpy.empty_like(AMDmid)
+# trainPredictPlot[:, :] = np.nan
+# trainPredictPlot[look_back:len(train_predict)+look_back, :] = train_predict
+# # shift test predictions for plotting
+# testPredictPlot = numpy.empty_like(AMDmid)
+# testPredictPlot[:, :] = numpy.nan
+# testPredictPlot[(len(train_predict))+(look_back*2)+1:len(AMDmid)-1, :] = test_predict
 
 #testPredictPlot[len(AMDmid)-12:len(AMDmid), :] = test_predict
 #testPredictPlot1 = numpy.empty_like(AMDmid)
 #testPredictPlot1[:, :] = numpy.nan
 #testPredictPlot1[(len(train_predict))+(look_back*2)+1:, :] = test_predict
-print("tp")
-print(testPredictPlot)
-print("tp math")
-print((len(train_predict))+(look_back*2)+1)
-print("amdmid")
-print(len(AMDmid))
+# print("tp")
+# print(testPredictPlot)
+# print("tp math")
+# print((len(train_predict))+(look_back*2)+1)
+# print("amdmid")
+# print(len(AMDmid))
 #the futurePlot is equal to the last "time step" of values genreated by the prediction method
 #the future vales have already been predicted just clla them and plot them from... too tired to understand 
 #bug tyler he'll understand, but figure out which len() is longer and that has the future values of "y's"
@@ -235,7 +212,7 @@ def predict_dates(num_step):
 	prediction_dates = pd.date_range(last_date, periods=num_step+1).tolist()
 	return prediction_dates
 	
-num_steps = 15
+num_steps = 300
 forecast = predict(model, num_steps)
 forecast = forecast.reshape(-1,1)
 forecast = scaler.inverse_transform(forecast)
