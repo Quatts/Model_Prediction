@@ -149,13 +149,8 @@ print(len(ytest))
 train_predict=scaler.inverse_transform(train_predict)
 test_predict=scaler.inverse_transform(test_predict)
 #AMDmid1=scaler.inverse_transform(AMDmid)
-f= open("guru99.txt","a")
 print(len(test_predict))
 print(len(AMDmid1))
-i = 0
-while(i<817):
-    f.write(str(i)+ ": x " + str(test_predict[i])+"\n")
-    i+=1
 #fpredict=scaler.inverse_transform(fpredict)
 #print(fpredict)
 print("hello")
@@ -210,10 +205,44 @@ print(len(AMDmid))
 
 
 # plot baseline and predictions
-plt.plot(scaler.inverse_transform(AMDmid[len(AMDmid)-200:]))
+#plt.plot(scaler.inverse_transform(AMDmid[len(AMDmid)-200:]))
 #plt.plot(AMDmid[len(AMDmid)-12:len(AMDmid)],"o")
 #plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot[len(testPredictPlot)-200:])#len(testPredictPlot)])
+#plt.plot(testPredictPlot[len(testPredictPlot)-200:])#len(testPredictPlot)])
 #plt.plot(testPredictPlot1)
 #plt.plot(currentStep)
+#plt.show()
+
+AMDmid.reshape((-1))
+
+def predict(model, num_step):
+
+	prediction_list = AMDmid[-look_back:]
+
+	for _ in range(num_step):
+		x = prediction_list[-look_back:]
+		print(prediction_list[-look_back:])
+		x = x.reshape(1, look_back, 1)
+		out = model.predict(x)[0][0]
+		prediction_list = np.append(prediction_list, out)
+	
+	prediction_list = prediction_list[look_back-1:]
+
+	return prediction_list
+
+def predict_dates(num_step):
+	last_date = AMDdate[-1]
+	prediction_dates = pd.date_range(last_date, periods=num_step+1).tolist()
+	return prediction_dates
+	
+num_steps = 15
+forecast = predict(model, num_steps)
+forecast = forecast.reshape(-1,1)
+forecast = scaler.inverse_transform(forecast)
+forecast_dates = predict_dates(num_steps)
+
+plot_data = np.array((forecast))
+
+plt.plot(plot_data)
+
 plt.show()
